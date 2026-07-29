@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Account - Channel</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
+<style>.lock-screen{display:flex;min-height:80vh;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:20px}</style>
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+</head><body>
+<header class="topnav">
+  <a class="logo" href="index.html">CHAN<span>NEL</span></a>
+  <nav class="nav" id="navMenu">
+    <a href="index.html">Home</a>
+    <a href="marketplace.html">Marketplace</a>
+    <a href="account.html" class="active">Account</a>
+    <a href="login.html" id="loginLink">Login</a>
+  </nav>
+  <button class="hamburger" id="hamburger">☰</button>
+</header>
+
+<div id="authCheck" class="lock-screen">
+  <h2>Checking login...</h2>
+  <p class="muted">Please wait - redirecting to login if not logged in</p>
+</div>
+
+<div id="accountContent" style="display:none">
+<div class="account">
+  <div>
+    <div class="card" style="position:sticky;top:80px">
+      <div class="muted">Account</div><h2 id="accUser">-</h2><div class="muted" id="accEmail"></div>
+      <div class="divider"></div><div class="muted">Balance</div><div class="stat" id="accBal">0 GHC</div>
+      <div class="divider"></div>
+      <div style="background:linear-gradient(135deg,var(--pink-light),#fff);border:2px dashed var(--pink-deep);padding:16px;border-radius:16px;margin-top:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div class="muted" style="font-weight:800;letter-spacing:.5px">YOUR INVITATION CODE IS</div>
+            <div style="font-size:28px;font-weight:900;letter-spacing:1px;margin:6px 0" id="tokenBig">CH-XXXXX</div>
+            <div class="muted" id="inviteInfo">Invites: 0/5 • Earned: 0 GHC</div>
+          </div>
+          <div style="font-size:28px">🎁</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <input id="myToken" class="input" readonly style="margin:0;font-weight:800;text-align:center">
+          <button class="btn btn-pink" id="copyBtn" style="white-space:nowrap">Copy</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+          <button class="btn btn-outline" id="shareBtn">Share Code</button>
+          <a class="btn btn-outline" id="waShare" target="_blank" style="text-align:center">WhatsApp</a>
+        </div>
+        <div class="muted" style="margin-top:8px;font-size:11px">Code expires after 3 uses. Each friend gives you +15 GHC.</div>
+      </div>
+      <div class="divider"></div>
+      <h4>Withdraw</h4>
+      <label class="label">Amount (min 50)</label><input id="wAmount" type="number" class="input" placeholder="50">
+      <label class="label">Phone Number</label><input id="wPhone" class="input" placeholder="05XXXXXXXX">
+      <label class="label">Account Name (as registered with this number)</label><input id="wAccountName" class="input" placeholder="Full name on the mobile money account">
+      <label class="label">Network</label><select id="wNet" class="input"><option>MTN</option><option>Vodafone</option><option>AirtelTigo</option></select>
+      <button id="wBtn" class="btn btn-pink" style="width:100%;margin-top:12px">Request Withdrawal</button>
+      <p id="wMsg" class="muted" style="margin-top:8px"></p>
+    </div>
+  </div>
+  <div>
+    <div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><h3>Investments</h3><span class="badge">+5 GHC / day • 120 days</span></div><div class="divider"></div><div id="invList"></div></div>
+    <div class="card" style="margin-top:16px"><h3>Withdrawals</h3><div class="divider"></div><div id="withList"></div></div>
+  </div>
+</div>
+</div>
+
+<script>
+document.getElementById('hamburger')?.addEventListener('click', ()=>{document.getElementById('navMenu').classList.toggle('open')});
+let currentUser=null;
+async function init(){
+  try{
+    currentUser=await Store.getCurrentUser();
+    if(!currentUser || !currentUser.id) throw new Error('not logged');
+    document.getElementById('authCheck').style.display='none';
+    document.getElementById('accountContent').style.display='block';
+    document.getElementById('accUser').textContent=currentUser.username;
+    document.getElementById('accEmail').textContent=currentUser.email;
+    const code=currentUser.invite_code||'NO CODE';
+    document.getElementById('myToken').value=code;
+    document.getElementById('tokenBig').textContent=code;
+    document.getElementById('inviteInfo').textContent=`Invites: ${currentUser.invite_count||0}/5 • Earned: ${(currentUser.invite_count||0)*15} GHC`;
+    document.getElementById('accBal').textContent=(currentUser.balance||0).toFixed(2)+' GHC';
+    const shareText=encodeURIComponent(`Join me on Channel! Use my invite code ${code} to register. Link: ${location.origin}/register.html`);
+    document.getElementById('waShare').href=`https://wa.me/?text=${shareText}`;
+    const loginLink=document.getElementById('loginLink');
+    if(loginLink){ loginLink.textContent='Logout'; loginLink.href='#'; loginLink.onclick=async(e)=>{e.preventDefault(); await Store.logout(); location.href='login.html';} }
+    const gain=await Store.processEarnings(currentUser).catch(()=>0);
+    if(gain>0){
+      currentUser=await Store.getCurrentUser();
+      document.getElementById('accBal').textContent=(currentUser.balance||0).toFixed(2)+' GHC';
+      if(window.toast) toast(`+${gain} GHC daily earnings added`);
+    }
+    loadInv(); loadWith();
+  }catch(e){
+    location.href='login.html?next=account.html';
+  }
+}
+async function loadInv(){
+  const list=await Store.getMyInvestments(currentUser.id);
+  const el=document.getElementById('invList');
+  if(!list.length){ el.innerHTML='<p class=muted>No investments. Buy in Marketplace.</p>'; return; }
+  el.innerHTML=list.map(i=>`<div style="display:flex;gap:12px;border:1px solid var(--border);padding:12px;border-radius:14px;margin-bottom:10px"><img src="${i.payment_screenshot_url}" style="width:64px;height:64px;object-fit:cover;border-radius:10px"><div style="flex:1"><b>${i.product_title}</b> <span class="badge">${i.status}</span><div class="muted">${i.daily_earning} GHC/day • Total earned ${i.total_earned||0} GHC</div>${i.admin_message?`<div style="color:#c00;font-size:12px;margin-top:4px">${i.admin_message}</div>`:''}</div></div>`).join('');
+}
+async function loadWith(){
+  let data;
+  if(supabaseClient){ const {data:d}=await supabaseClient.from('withdrawals').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}); data=d||[]; }
+  else{ data=JSON.parse(localStorage.getItem('channel_withdrawals')||'[]').filter(w=>w.user_id===currentUser.id).reverse(); }
+  const el=document.getElementById('withList');
+  if(!data.length){ el.innerHTML='<p class=muted>No withdrawals</p>'; return; }
+  el.innerHTML=data.map(w=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span>${w.amount} GHC • ${w.phone_number} (${w.account_name||''}, ${w.network})</span><span class="badge">${w.status}</span></div>`).join('');
+}
+document.getElementById('copyBtn')?.addEventListener('click',()=>{ navigator.clipboard.writeText(document.getElementById('myToken').value); if(window.toast) toast('Token copied!'); });
+document.getElementById('shareBtn')?.addEventListener('click', async()=>{
+  const code=document.getElementById('myToken').value;
+  const text=`Join Channel! My invite code: ${code}. Register at ${location.origin}/register.html`;
+  if(navigator.share){ try{ await navigator.share({title:'Channel Invite', text}); }catch{} } else { navigator.clipboard.writeText(text); if(window.toast) toast('Invite text copied'); }
+});
+document.getElementById('wBtn')?.addEventListener('click', async()=>{
+  const amount=parseFloat(document.getElementById('wAmount').value);
+  const phone=document.getElementById('wPhone').value.trim();
+  const accountName=document.getElementById('wAccountName').value.trim();
+  const network=document.getElementById('wNet').value;
+  const msg=document.getElementById('wMsg');
+  if(!amount||amount<50){ msg.textContent='Min 50 GHC'; return; }
+  if(!phone){ msg.textContent='Enter phone number'; return; }
+  if(!accountName){ msg.textContent='Enter the account name registered to that number'; return; }
+  if(amount>currentUser.balance){ msg.textContent='Insufficient balance'; return; }
+  if(currentUser.balance - amount < 5){ msg.textContent='Account balance cannot go below GHC 5'; return; }
+  try{
+    if(supabaseClient){
+      const {error}=await supabaseClient.from('withdrawals').insert({user_id:currentUser.id,amount,phone_number:phone,account_name:accountName,network,status:'pending'});
+      if(error) throw error;
+      await supabaseClient.from('profiles').update({balance:currentUser.balance-amount}).eq('id',currentUser.id);
+    }else{
+      let withdrawals=JSON.parse(localStorage.getItem('channel_withdrawals')||'[]');
+      withdrawals.push({id:'w'+Date.now(),user_id:currentUser.id,amount,phone_number:phone,account_name:accountName,network,status:'pending',created_at:new Date().toISOString()});
+      localStorage.setItem('channel_withdrawals',JSON.stringify(withdrawals));
+      let users=JSON.parse(localStorage.getItem('channel_users')||'[]'); let me=users.find(u=>u.id===currentUser.id); me.balance-=amount; localStorage.setItem('channel_users',JSON.stringify(users)); localStorage.setItem('channel_session',JSON.stringify(me));
+    }
+    if(window.toast) toast('Withdrawal requested'); setTimeout(()=>location.reload(),800);
+  }catch(e){ msg.textContent=e.message; }
+});
+init();
+</script>
+</body></html>

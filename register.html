@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Register - Channel</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+</head><body>
+<header class="topnav">
+  <a class="logo" href="index.html">CHAN<span>NEL</span></a>
+  <nav class="nav" id="navMenu">
+    <a href="index.html" class="">Home</a>
+    <a href="marketplace.html" class="">Marketplace</a>
+    <a href="account.html" class="">Account</a>
+    <a href="login.html" class="active" id="loginLink">Login</a>
+  </nav>
+  <button class="hamburger" id="hamburger">☰</button>
+</header>
+
+<div class="form card">
+  <h2>Create account</h2><p class="muted">Get your own invite token</p>
+  <label class="label">Username</label><input id="username" class="input">
+  <label class="label">Email</label><input id="email" class="input" type="email">
+  <label class="label">Password</label><input id="password" class="input" type="password">
+  <label class="label">Confirm Password</label><input id="confirmPassword" class="input" type="password">
+  <label class="label">Invite Token (optional)</label><input id="inviteCode" class="input" placeholder="CH-XXXXX (leave empty if none)">
+  <button id="regBtn" class="btn btn-pink" style="width:100%;margin-top:18px">Register</button>
+  <p id="regMsg" class="muted" style="margin-top:10px"></p>
+  <p class="muted" style="margin-top:12px">I have an account? <a href="login.html" style="color:var(--pink-deep);font-weight:700">Login</a></p>
+</div>
+<script>
+let regSubmitting = false;
+document.getElementById('regBtn').addEventListener('click', async()=>{
+  if(regSubmitting) return;
+  const btn=document.getElementById('regBtn');
+  const username=document.getElementById('username').value.trim();
+  const email=document.getElementById('email').value.trim();
+  const password=document.getElementById('password').value;
+  const confirmPassword=document.getElementById('confirmPassword').value;
+  const inviteCode=document.getElementById('inviteCode').value.trim().toUpperCase();
+  const msg=document.getElementById('regMsg');
+  if(!username||!email||!password||!confirmPassword){ msg.textContent='Fill all fields'; return; }
+  if(password!==confirmPassword){ msg.textContent='Passwords do not match'; return; }
+  regSubmitting = true;
+  btn.disabled=true; btn.textContent='Creating...';
+  try{
+    await Store.register({username,email,password,inviteCode});
+    msg.textContent='Registered successfully';
+    toast('Registered successfully');
+    setTimeout(()=>location.href='login.html',900);
+  }catch(e){
+    const raw = e.message||'';
+    const taken = /taken|already (exists|registered)|duplicate key/i.test(raw);
+    const expiredInvite = /expired|max 5 uses/i.test(raw);
+    let shown = 'Registration Failed';
+    if(taken) shown = 'Email or username taken';
+    else if(expiredInvite) shown = 'That invite code has already been used the maximum 5 times.';
+    msg.textContent=shown; toast(shown);
+  }
+finally{ regSubmitting = false; btn.disabled=false; btn.textContent='Register'; }
+});
+</script>
+
+<script>
+document.getElementById('hamburger')?.addEventListener('click', ()=>{document.getElementById('navMenu').classList.toggle('open')});
+(async()=>{
+  const u=await Store.getCurrentUser().catch(()=>null);
+  if(u){ const l=document.getElementById('loginLink'); if(l){ l.textContent='Logout'; l.href='#'; l.onclick=async(e)=>{e.preventDefault(); await Store.logout(); location.href='index.html';} } }
+})();
+</script>
+</body></html>

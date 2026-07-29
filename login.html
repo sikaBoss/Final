@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Login - Channel</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+</head><body>
+<header class="topnav">
+  <a class="logo" href="index.html">CHAN<span>NEL</span></a>
+  <nav class="nav" id="navMenu">
+    <a href="index.html" class="">Home</a>
+    <a href="marketplace.html" class="">Marketplace</a>
+    <a href="account.html" class="">Account</a>
+    <a href="login.html" class="active" id="loginLink">Login</a>
+  </nav>
+  <button class="hamburger" id="hamburger">☰</button>
+</header>
+
+<div class="form card">
+  <h2>Login</h2>
+  <label class="label">Email</label><input id="email" class="input" type="email">
+  <label class="label">Password</label><input id="password" class="input" type="password">
+  <button id="loginBtn" class="btn btn-pink" style="width:100%;margin-top:30px">Login</button>
+  <p class="muted" style="margin-top:35px; text-align:right"><a href="forgot-password.html" style="color:var(--pink-deep);font-weight:700">Forgot password?</a></p>
+  <p id="loginMsg" class="muted" style="margin-top:-28px" style="text-align: center;"></p>
+  <p class="muted" style="margin-top:10px" style="position: fixed;">I don't have an account? <a href="register.html" style="color:var(--pink-deep);font-weight:700">Register</a></p>
+</div>
+<script>
+document.getElementById('loginBtn').addEventListener('click', async()=>{
+  const btn=document.getElementById('loginBtn');
+  const email=document.getElementById('email').value.trim();
+  const password=document.getElementById('password').value;
+  const msg=document.getElementById('loginMsg');
+  if(!email||!password){ msg.textContent='Enter email & password'; return; }
+  btn.disabled=true; btn.textContent='Logging in...';
+  try{
+    await Store.login(email,password);
+    toast('Welcome!'); setTimeout(()=>{ const p=new URLSearchParams(location.search); location.href=p.get('next')||'account.html'; },600);
+  }catch(e){
+    const raw = e.message || '';
+    let shown = 'Login failed. Please try again.';
+    if(/invalid login credentials|invalid email or password/i.test(raw)) shown = 'Incorrect email or password.';
+    else if(/email not confirmed/i.test(raw)) shown = 'Please confirm your email before logging in.';
+    else if(/user not found/i.test(raw)) shown = 'No account found with that email.';
+    msg.textContent=shown; toast(shown);
+  }
+  finally{ btn.disabled=false; btn.textContent='Login'; }
+});
+</script>
+
+<script>
+document.getElementById('hamburger')?.addEventListener('click', ()=>{document.getElementById('navMenu').classList.toggle('open')});
+(async()=>{
+  const u=await Store.getCurrentUser().catch(()=>null);
+  if(u){ const l=document.getElementById('loginLink'); if(l){ l.textContent='Logout'; l.href='#'; l.onclick=async(e)=>{e.preventDefault(); await Store.logout(); location.href='index.html';} } }
+})();
+</script>
+</body></html>

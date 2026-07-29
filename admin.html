@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin - Channel</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+</head><body>
+<header class="topnav">
+  <a class="logo" href="index.html">CHAN<span>NEL</span></a>
+  <nav class="nav" id="navMenu">
+    <a href="index.html" class="">Home</a>
+    <a href="marketplace.html" class="">Marketplace</a>
+    <a href="account.html" class="">Account</a>
+    <a href="login.html" class="" id="loginLink">Login</a>
+  </nav>
+  <button class="hamburger" id="hamburger">☰</button>
+</header>
+
+<div id="loginBox" class="form card"><h3>Admin Login</h3><p class="muted">Hidden - not in home nav</p>
+<label class="label">Email</label><input id="aEmail" class="input" value="admin@channel.com">
+<label class="label">Password</label><input id="aPass" type="password" class="input" value="admin123">
+<button id="aBtn" class="btn btn-pink" style="width:100%;margin-top:12px">Login</button>
+<p id="aMsg" class="muted" style="margin-top:8px"></p>
+<p class="muted" style="margin-top:8px">For Supabase mode: set your email as is_admin=true in profiles table. Local demo uses admin@channel.com / admin123</p>
+</div>
+
+<div id="adminPanel" style="display:none;padding:20px 5%">
+<div style="display:grid;grid-template-columns:1.1fr .9fr;gap:18px">
+<div class="card"><h3>Add Product</h3>
+<label class="label">Title</label><input id="pTitle" class="input" placeholder="Channel Starter">
+<label class="label">Name</label><input id="pName" class="input" placeholder="Starter">
+<label class="label">Price GHC</label><input id="pPrice" type="number" class="input" placeholder="200">
+<label class="label">Income per day</label><input id="pIncome" type="number" value="5" class="input">
+<label class="label">Days</label><input id="pDays" type="number" value="120" class="input">
+<label class="label">Image URL</label><input id="pImage" class="input" placeholder="https://...">
+<input id="pImageFile" type="file" accept="image/*" class="input">
+<label class="label">Steps to buy / Payment instructions</label><textarea id="pSteps" rows="4" class="input" placeholder="1. Send to MTN 05XXXX&#10;2. Reference Channel&#10;3. Upload screenshot"></textarea>
+<button id="addBtn" class="btn btn-pink" style="width:100%;margin-top:12px">Add Product</button>
+<button id="cancelEditBtn" class="btn btn-outline" style="width:100%;margin-top:8px;display:none">Cancel Edit</button>
+</div>
+<div class="card"><h3>Manage Products</h3><div id="productList" style="max-height:650px;overflow:auto"></div></div>
+</div>
+<div style="margin-top:18px"><div class="card"><h3>Pending Payments</h3><input id="searchUser" class="input" placeholder="Search username..."><div id="invList" style="max-height:650px;overflow:auto;margin-top:12px"></div></div></div>
+</div>
+<div class="card" style="margin-top:18px"><h3>Withdrawals</h3><div id="withList"></div></div>
+<div class="card" style="margin-top:18px"><h3>Users & Invites</h3><div id="userList"></div></div>
+</div>
+
+<script>
+let isAdmin=false;
+document.getElementById('aBtn').addEventListener('click', async()=>{
+  const email=document.getElementById('aEmail').value.trim();
+  const pass=document.getElementById('aPass').value;
+  const msg=document.getElementById('aMsg');
+  if(supabaseClient){
+    try{
+      const {data,error}=await supabaseClient.auth.signInWithPassword({email,password:pass});
+      if(error) throw error;
+      const {data:prof}=await supabaseClient.from('profiles').select('*').eq('id',data.user.id).single();
+      if(!prof.is_admin){ throw new Error('Not admin - run: UPDATE profiles SET is_admin=true WHERE email=\''+email+'\''); }
+      isAdmin=true;
+    }catch(e){ msg.textContent=e.message; toast(e.message); return; }
+  }else{
+    if(email!=='admin@channel.com' || pass!=='admin123'){ msg.textContent='Local demo: admin@channel.com / admin123'; return; }
+    isAdmin=true;
+  }
+  document.getElementById('loginBox').style.display='none';
+  document.getElementById('adminPanel').style.display='block';
+  loadAll();
+});
+
+async function loadAll(){ loadInv(); loadWith(); loadUsers(); loadProducts(); }
+
+let editingId = null;
+let productsCache = [];
+
+async function loadProducts(){
+  productsCache = await Store.getProducts().catch(()=>[]);
+  const el=document.getElementById('productList');
+  if(!productsCache.length){ el.innerHTML='<p class=muted>No products yet</p>'; return; }
+  el.innerHTML = productsCache.map(p=>`<div style="border:1px solid var(--border);padding:12px;border-radius:14px;margin-bottom:10px;display:flex;gap:12px;align-items:center">
+    <img src="${p.image_url}" style="width:56px;height:56px;object-fit:cover;border-radius:10px;background:#fff2f6">
+    <div style="flex:1">
+      <b>${p.title}</b><br>
+      <span class="muted">${p.price} GHC · ${p.income_per_day}/day × ${p.days}d</span>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-pink" style="padding:6px 10px" onclick="editProduct('${p.id}')">Edit</button>
+      <button class="btn btn-outline" style="padding:6px 10px" onclick="deleteProductUI('${p.id}')">Delete</button>
+    </div>
+  </div>`).join('');
+}
+
+function editProduct(id){
+  const p = productsCache.find(x=>x.id===id);
+  if(!p) return;
+  editingId = id;
+  document.getElementById('pTitle').value = p.title || '';
+  document.getElementById('pName').value = p.name || '';
+  document.getElementById('pPrice').value = p.price || '';
+  document.getElementById('pIncome').value = p.income_per_day || 5;
+  document.getElementById('pDays').value = p.days || 120;
+  document.getElementById('pImage').value = p.image_url || '';
+  document.getElementById('pSteps').value = p.steps || '';
+  document.getElementById('addBtn').textContent = 'Save Changes';
+  document.getElementById('cancelEditBtn').style.display = 'block';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function cancelEdit(){
+  editingId = null;
+  document.getElementById('pTitle').value='';
+  document.getElementById('pName').value='';
+  document.getElementById('pPrice').value='';
+  document.getElementById('pIncome').value=5;
+  document.getElementById('pDays').value=120;
+  document.getElementById('pImage').value='';
+  document.getElementById('pImageFile').value='';
+  document.getElementById('pSteps').value='';
+  document.getElementById('addBtn').textContent = 'Add Product';
+  document.getElementById('cancelEditBtn').style.display = 'none';
+}
+document.getElementById('cancelEditBtn').addEventListener('click', cancelEdit);
+
+async function deleteProductUI(id){
+  if(!confirm('Delete this product? This cannot be undone.')) return;
+  try{ await Store.deleteProduct(id); toast('Product deleted'); loadProducts(); }
+  catch(e){ toast(e.message); }
+}
+
+async function loadInv(){
+  let data=[];
+  const search=document.getElementById('searchUser').value.trim().toLowerCase();
+  if(supabaseClient){
+    let q=supabaseClient.from('investments').select('*,profiles!inner(username)').order('created_at',{ascending:false});
+    if(search) q=q.ilike('profiles.username','%'+search+'%');
+    const {data:d}=await q; data=d||[];
+  }else{
+    data=LS.get('channel_investments',[]).reverse();
+    if(search){
+      const users=LS.get('channel_users',[]);
+      data=data.filter(inv=>{ const u=users.find(x=>x.id===inv.user_id); return u&&u.username.toLowerCase().includes(search); });
+    }
+  }
+  const el=document.getElementById('invList');
+  if(!data.length){ el.innerHTML='<p class=muted>No investments</p>'; return; }
+  el.innerHTML=data.map(inv=>{
+    const username = inv.profiles?.username || (LS.get('channel_users',[]).find(u=>u.id===inv.user_id)?.username || 'User');
+    return `<div style="border:1px solid var(--border);padding:12px;border-radius:14px;margin-bottom:10px">
+      <b>${username}</b> ${inv.buyer_email?`(${inv.buyer_email})`:''} - ${inv.product_title} <span class="badge">${inv.status}</span>
+      <a href="${inv.payment_screenshot_url}" target="_blank"><img src="${inv.payment_screenshot_url}" style="width:100%;max-height:180px;object-fit:contain;margin-top:8px;border-radius:10px;background:#fff2f6"></a>
+      <div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-pink" style="padding:8px 12px" onclick="approveInv('${inv.id}')">Approve</button><button class="btn btn-outline" style="padding:8px 12px" onclick="rejectInv('${inv.id}')">Payment Not Received</button></div></div>`;
+  }).join('');
+}
+async function approveInv(id){
+  if(supabaseClient){ await supabaseClient.from('investments').update({status:'approved',approved_at:new Date().toISOString(),total_earned:0}).eq('id',id); }
+  else{ let invs=LS.get('channel_investments',[]); let inv=invs.find(i=>i.id===id); if(inv){ inv.status='approved'; inv.approved_at=new Date().toISOString(); } LS.set('channel_investments',invs); }
+  toast('Approved - now visible in user Account'); loadInv();
+}
+async function rejectInv(id){
+  const m=prompt('Message to user','Payment not received, please verify and re-upload');
+  if(m===null) return;
+  if(supabaseClient){ await supabaseClient.from('investments').update({status:'rejected',admin_message:m}).eq('id',id); }
+  else{ let invs=LS.get('channel_investments',[]); let inv=invs.find(i=>i.id===id); if(inv){ inv.status='rejected'; inv.admin_message=m; } LS.set('channel_investments',invs); }
+  toast('Rejected with message'); loadInv();
+}
+async function loadWith(){
+  let data=[];
+  if(supabaseClient){ const {data:d}=await supabaseClient.from('withdrawals').select('*,profiles(username,email)').order('created_at',{ascending:false}); data=d||[]; }
+  else{ data=LS.get('channel_withdrawals',[]).reverse(); }
+  const el=document.getElementById('withList');
+  if(!data.length){ el.innerHTML='No withdrawals'; return; }
+  el.innerHTML=data.map(w=>{
+    const localUser = LS.get('channel_users',[]).find(u=>u.id===w.user_id);
+    const uname=w.profiles?.username || localUser?.username || 'User';
+    const uemail=w.profiles?.email || localUser?.email || '';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)"><span>${uname} (${uemail}) - ${w.amount} GHC to ${w.phone_number}, ${w.account_name||'—'} (${w.network}) <span class="badge">${w.status}</span></span>
+    <span><button class="btn btn-pink" style="padding:6px 10px" onclick="approveW('${w.id}')">Approve</button> <button class="btn btn-outline" style="padding:6px 10px" onclick="rejectW('${w.id}')">Reject</button></span></div>`;
+  }).join('');
+}
+async function approveW(id){
+  if(supabaseClient){ await supabaseClient.from('withdrawals').update({status:'approved'}).eq('id',id); }
+  else{ let ws=LS.get('channel_withdrawals',[]); let w=ws.find(x=>x.id===id); if(w) w.status='approved'; LS.set('channel_withdrawals',ws); }
+  toast('Withdrawal approved'); loadWith();
+}
+async function rejectW(id){
+  if(supabaseClient){
+    const {data:w}=await supabaseClient.from('withdrawals').select('*').eq('id',id).single();
+    if(w){ const {data:p}=await supabaseClient.from('profiles').select('balance').eq('id',w.user_id).single(); await supabaseClient.from('profiles').update({balance:(p.balance||0)+w.amount}).eq('id',w.user_id); }
+    await supabaseClient.from('withdrawals').update({status:'rejected'}).eq('id',id);
+  }else{
+    let ws=LS.get('channel_withdrawals',[]); let w=ws.find(x=>x.id===id);
+    if(w){ let users=LS.get('channel_users',[]); let u=users.find(x=>x.id===w.user_id); if(u) u.balance+=w.amount; w.status='rejected'; LS.set('channel_users',users); LS.set('channel_withdrawals',ws); }
+  }
+  toast('Rejected & refunded'); loadWith();
+}
+async function loadUsers(){
+  let users=[];
+  if(supabaseClient){ const {data}=await supabaseClient.from('profiles').select('*').order('created_at',{ascending:false}).limit(50); users=data||[]; }
+  else{ users=LS.get('channel_users',[]); }
+  document.getElementById('userList').innerHTML=users.map(u=>`<div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between"><span>${u.username} - ${u.email} - Bal: ${u.balance} - Inv: ${u.invite_count||0}/3 - ${u.invite_code}</span><span class="muted">${u.is_admin?'ADMIN':''}</span></div>`).join('');
+}
+document.getElementById('searchUser')?.addEventListener('input', loadInv);
+document.getElementById('addBtn').addEventListener('click', async()=>{
+  const btn=document.getElementById('addBtn');
+  const payload={
+    title:document.getElementById('pTitle').value.trim(),
+    name:document.getElementById('pName').value.trim(),
+    price:parseFloat(document.getElementById('pPrice').value),
+    income_per_day:parseFloat(document.getElementById('pIncome').value)||5,
+    days:parseInt(document.getElementById('pDays').value)||120,
+    image_url:document.getElementById('pImage').value.trim(),
+    steps:document.getElementById('pSteps').value,
+    file:document.getElementById('pImageFile').files[0]||null
+  };
+  if(!payload.title||!payload.price){ toast('Title & price required'); return; }
+  const wasEditing = !!editingId;
+  btn.disabled=true; btn.textContent=wasEditing?'Saving...':'Adding...';
+  try{
+    if(wasEditing){
+      await Store.updateProduct(editingId, payload);
+      toast('Product updated');
+      cancelEdit();
+    }else{
+      await Store.addProduct(payload);
+      toast('Product added');
+    }
+    setTimeout(()=>loadAll(),500);
+  }catch(e){ toast(e.message); }
+  finally{ btn.disabled=false; btn.textContent = editingId ? 'Save Changes' : 'Add Product'; }
+});
+</script>
+
+<script>
+document.getElementById('hamburger')?.addEventListener('click', ()=>{document.getElementById('navMenu').classList.toggle('open')});
+(async()=>{
+  const u=await Store.getCurrentUser().catch(()=>null);
+  if(u){ const l=document.getElementById('loginLink'); if(l){ l.textContent='Logout'; l.href='#'; l.onclick=async(e)=>{e.preventDefault(); await Store.logout(); location.href='index.html';} } }
+})();
+</script>
+</body></html>

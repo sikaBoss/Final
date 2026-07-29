@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Marketplace - Channel</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+</head><body>
+<header class="topnav">
+  <a class="logo" href="index.html">CHAN<span>NEL</span></a>
+  <nav class="nav" id="navMenu">
+    <a href="index.html" class="">Home</a>
+    <a href="marketplace.html" class="active">Marketplace</a>
+    <a href="account.html" class="">Account</a>
+    <a href="login.html" class="" id="loginLink">Login</a>
+  </nav>
+  <button class="hamburger" id="hamburger">☰</button>
+</header>
+
+<div style="padding:24px 5%"><h1>Marketplace</h1><p class="muted">Choose a product, follow the P2P steps to make payments, upload proof</p></div>
+<div id="grid" class="grid"></div>
+<div id="buyModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:60;align-items:center;justify-content:center;padding:16px">
+  <div class="card" style="width:100%;max-width:480px;max-height:90vh;overflow:auto">
+    <h3 id="mTitle">Buy</h3>
+    <div style="background:var(--pink-light);padding:12px;border-radius:12px;margin:12px 0;white-space:pre-wrap;font-size:13px" id="mSteps"></div>
+    <label class="label">Your Username</label><input id="buyUser" class="input">
+    <label class="label">Your Email</label><input id="buyEmail" class="input" type="email">
+    <label class="label">Payment Screenshot</label><input id="buyFile" type="file" accept="image/*" class="input">
+    <button id="buyBtn" class="btn btn-pink" style="width:100%;margin-top:14px">Submit for Approval by product owner</button>
+    <button onclick="closeModal()" class="btn btn-outline" style="width:100%;margin-top:8px">Cancel</button>
+    <p id="buyMsg" class="muted" style="margin-top:8px"></p>
+  </div>
+</div>
+<script>
+let selected=null;
+function openModal(p){ selected=p; document.getElementById('mTitle').textContent=p.title; document.getElementById('mSteps').textContent=p.steps||'Upload payment proof'; document.getElementById('buyModal').style.display='flex'; }
+function closeModal(){ document.getElementById('buyModal').style.display='none'; }
+async function load(){
+  const products=await Store.getProducts();
+  const g=document.getElementById('grid');
+  if(!products.length){ g.innerHTML='<p class=muted>No products</p>'; return; }
+  g.innerHTML=products.map(p=>`
+    <div class="card"><img class="product-img" src="${p.image_url}"><h3 style="margin-top:10px">${p.title}</h3><div class="muted">${p.name||''} • ${p.days||120} days</div>
+    <div class="divider"></div><div style="display:flex;justify-content:space-between"><span><b>${p.price} GHC</b></span><span class="badge">+${p.income_per_day}/day = ${p.total_income||p.income_per_day*120} total</span></div>
+    <button class="btn btn-pink" style="width:100%;margin-top:12px" onclick='openModal(${JSON.stringify(p).replace(/'/g,"&apos;")})'>Buy Now</button></div>`).join('');
+}
+document.getElementById('buyBtn').addEventListener('click', async()=>{
+  const btn=document.getElementById('buyBtn');
+  const username=document.getElementById('buyUser').value.trim();
+  const email=document.getElementById('buyEmail').value.trim();
+  const file=document.getElementById('buyFile').files[0];
+  const msg=document.getElementById('buyMsg');
+  if(!username||!email||!file){ msg.textContent='Username, email & screenshot required'; return; }
+  btn.disabled=true; btn.textContent='Submitting...';
+  try{ await Store.createInvestment({username, email, product:selected, screenshotFile:file}); toast('Submitted! Wait for admin approval in Account'); closeModal(); }
+  catch(e){ msg.textContent=e.message; toast(e.message); }
+  finally{ btn.disabled=false; btn.textContent='Submit for Admin Approval'; }
+});
+load();
+</script>
+
+<script>
+document.getElementById('hamburger')?.addEventListener('click', ()=>{document.getElementById('navMenu').classList.toggle('open')});
+(async()=>{
+  const u=await Store.getCurrentUser().catch(()=>null);
+  if(u){ const l=document.getElementById('loginLink'); if(l){ l.textContent='Logout'; l.href='#'; l.onclick=async(e)=>{e.preventDefault(); await Store.logout(); location.href='index.html';} } }
+})();
+</script>
+</body></html>
