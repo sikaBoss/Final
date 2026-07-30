@@ -60,7 +60,7 @@
     </div>
   </div>
   <div>
-    <div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><h3>Investments</h3><span class="badge">GHC 30% per day • 120 days</span></div><div class="divider"></div><div id="invList"></div></div>
+    <div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><h3>Investments</h3><span class="badge">+5 GHC / day • 120 days</span></div><div class="divider"></div><div id="invList"></div></div>
     <div class="card" style="margin-top:16px"><h3>Withdrawals</h3><div class="divider"></div><div id="withList"></div></div>
   </div>
 </div>
@@ -82,7 +82,7 @@ async function init(){
     document.getElementById('tokenBig').textContent=code;
     document.getElementById('inviteInfo').textContent=`Invites: ${currentUser.invite_count||0}/5 • Earned: ${(currentUser.invite_count||0)*15} GHC`;
     document.getElementById('accBal').textContent=(currentUser.balance||0).toFixed(2)+' GHC';
-    const shareText=encodeURIComponent(`Join me on Channel! Use my invite code ${code} to register. Link: ${location.origin}/register.html`);
+    const shareText=encodeURIComponent(`Join me on Channel! Use my invite code ${code} to register. Link: ${location.origin}/register.html?ref=${code}`);
     document.getElementById('waShare').href=`https://wa.me/?text=${shareText}`;
     const loginLink=document.getElementById('loginLink');
     if(loginLink){ loginLink.textContent='Logout'; loginLink.href='#'; loginLink.onclick=async(e)=>{e.preventDefault(); await Store.logout(); location.href='login.html';} }
@@ -114,7 +114,7 @@ async function loadWith(){
 document.getElementById('copyBtn')?.addEventListener('click',()=>{ navigator.clipboard.writeText(document.getElementById('myToken').value); if(window.toast) toast('Token copied!'); });
 document.getElementById('shareBtn')?.addEventListener('click', async()=>{
   const code=document.getElementById('myToken').value;
-  const text=`Join Channel! My invite code: ${code}. Register at ${location.origin}/register.html`;
+  const text=`Join Channel! My invite code: ${code}. Register at ${location.origin}/register.html?ref=${code}`;
   if(navigator.share){ try{ await navigator.share({title:'Channel Invite', text}); }catch{} } else { navigator.clipboard.writeText(text); if(window.toast) toast('Invite text copied'); }
 });
 document.getElementById('wBtn')?.addEventListener('click', async()=>{
