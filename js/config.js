@@ -1,5 +1,5 @@
 
-// Channel - Config & Storage Adapter
+// Chanel - Config & Storage Adapter
 // Works in DEMO mode (localStorage) until you set Supabase keys
 
 // The previous Supabase project (gtbsprhwndhxartzswpv) was deleted, so these
@@ -35,14 +35,14 @@ const LS = {
 
 // Seed demo products if empty
 function seedLocal(){
-  let products = LS.get('channel_products', null);
+  let products = LS.get('Chanel_products', null);
   if(!products){
     products = [
-      {id:'p1',title:'Channel Starter Pack',name:'Starter',price:200,income_per_day:5,days:120,total_income:600,image_url:'https://images.unsplash.com/photo-1555529771-7888783a18d3?w=600',steps:'1. Send 200 GHC to MTN 059XXXXXXX\n2. Name: Channel Investment\n3. Upload screenshot',created_at:new Date().toISOString()},
-      {id:'p2',title:'Channel Growth Fund',name:'Growth',price:500,income_per_day:5,days:120,total_income:600,image_url:'https://images.unsplash.com/photo-1553729459-efe14ef6055d?w=600',steps:'1. Send 500 GHC to MTN 059XXXXXXX\n2. Upload proof',created_at:new Date().toISOString()},
-      {id:'p3',title:'Channel Premium Pro',name:'Premium',price:1000,income_per_day:5,days:120,total_income:600,image_url:'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=600',steps:'1. Send 1000 GHC\n2. Keep reference',created_at:new Date().toISOString()},
+      {id:'p1',title:'Chanel Starter Pack',name:'Starter',price:200,income_per_day:5,days:120,total_income:600,image_url:'https://images.unsplash.com/photo-1555529771-7888783a18d3?w=600',steps:'1. Send 200 GHC to MTN 059XXXXXXX\n2. Name: Chanel Investment\n3. Upload screenshot',created_at:new Date().toISOString()},
+      {id:'p2',title:'Chanel Growth Fund',name:'Growth',price:500,income_per_day:5,days:120,total_income:600,image_url:'https://images.unsplash.com/photo-1553729459-efe14ef6055d?w=600',steps:'1. Send 500 GHC to MTN 059XXXXXXX\n2. Upload proof',created_at:new Date().toISOString()},
+      {id:'p3',title:'Chanel Premium Pro',name:'Premium',price:1000,income_per_day:5,days:120,total_income:600,image_url:'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=600',steps:'1. Send 1000 GHC\n2. Keep reference',created_at:new Date().toISOString()},
     ];
-    LS.set('channel_products', products);
+    LS.set('Chanel_products', products);
   }
 }
 seedLocal();

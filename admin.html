@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Admin - Channel</title>
+<title>Admin - Chanel</title>
 <link rel="stylesheet" href="css/style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
 <script src="js/config.js"></script>
@@ -18,7 +18,7 @@
 </header>
 
 <div id="loginBox" class="form card"><h3>Admin Login</h3>
-<label class="label">Email</label><input id="aEmail" class="input" value="admin@channel.com">
+<label class="label">Email</label><input id="aEmail" class="input" value="admin@Chanel.com">
 <label class="label">Password</label><input id="aPass" type="password" class="input" value="admin123">
 <button id="aBtn" class="btn btn-pink" style="width:100%;margin-top:12px">Login</button>
 <p id="aMsg" class="muted" style="margin-top:8px"></p>
@@ -27,14 +27,14 @@
 <div id="adminPanel" style="display:none;padding:20px 5%">
 <div style="display:grid;grid-template-columns:1.1fr .9fr;gap:18px">
 <div class="card"><h3>Add Product</h3>
-<label class="label">Title</label><input id="pTitle" class="input" placeholder="Channel Starter">
+<label class="label">Title</label><input id="pTitle" class="input" placeholder="Chanel Starter">
 <label class="label">Name</label><input id="pName" class="input" placeholder="Starter">
 <label class="label">Price GHC</label><input id="pPrice" type="number" class="input" placeholder="200">
 <label class="label">Income per day</label><input id="pIncome" type="number" value="5" class="input">
 <label class="label">Days</label><input id="pDays" type="number" value="120" class="input">
 <label class="label">Image URL (optional — leave blank if uploading a file below)</label><input id="pImage" class="input" placeholder="https://...">
 <input id="pImageFile" type="file" accept="image/*" class="input">
-<label class="label">Steps to buy / Payment instructions</label><textarea id="pSteps" rows="4" class="input" placeholder="1. Send to MTN 05XXXX&#10;2. Reference Channel&#10;3. Upload screenshot"></textarea>
+<label class="label">Steps to buy / Payment instructions</label><textarea id="pSteps" rows="4" class="input" placeholder="1. Send to MTN 05XXXX&#10;2. Reference Chanel&#10;3. Upload screenshot"></textarea>
 <button id="addBtn" class="btn btn-pink" style="width:100%;margin-top:12px">Add Product</button>
 <button id="cancelEditBtn" class="btn btn-outline" style="width:100%;margin-top:8px;display:none">Cancel Edit</button>
 </div>
@@ -61,7 +61,7 @@ document.getElementById('aBtn').addEventListener('click', async()=>{
       isAdmin=true;
     }catch(e){ msg.textContent=e.message; toast(e.message); return; }
   }else{
-    if(email!=='admin@channel.com' || pass!=='admin123'){ msg.textContent='Local demo: admin@channel.com / admin123'; return; }
+    if(email!=='admin@Chanel.com' || pass!=='admin123'){ msg.textContent='Local demo: admin@Chanel.com / admin123'; return; }
     isAdmin=true;
   }
   document.getElementById('loginBox').style.display='none';
@@ -136,16 +136,16 @@ async function loadInv(){
     if(search) q=q.ilike('profiles.username','%'+search+'%');
     const {data:d}=await q; data=d||[];
   }else{
-    data=LS.get('channel_investments',[]).reverse();
+    data=LS.get('Chanel_investments',[]).reverse();
     if(search){
-      const users=LS.get('channel_users',[]);
+      const users=LS.get('Chanel_users',[]);
       data=data.filter(inv=>{ const u=users.find(x=>x.id===inv.user_id); return u&&u.username.toLowerCase().includes(search); });
     }
   }
   const el=document.getElementById('invList');
   if(!data.length){ el.innerHTML='<p class=muted>No investments</p>'; return; }
   el.innerHTML=data.map(inv=>{
-    const username = inv.profiles?.username || (LS.get('channel_users',[]).find(u=>u.id===inv.user_id)?.username || 'User');
+    const username = inv.profiles?.username || (LS.get('Chanel_users',[]).find(u=>u.id===inv.user_id)?.username || 'User');
     return `<div style="border:1px solid var(--border);padding:12px;border-radius:14px;margin-bottom:10px">
       <b>${username}</b> ${inv.buyer_email?`(${inv.buyer_email})`:''} - ${inv.product_title} <span class="badge">${inv.status}</span>
       <a href="${inv.payment_screenshot_url}" target="_blank"><img src="${inv.payment_screenshot_url}" style="width:100%;max-height:180px;object-fit:contain;margin-top:8px;border-radius:10px;background:#fff2f6"></a>
@@ -154,24 +154,24 @@ async function loadInv(){
 }
 async function approveInv(id){
   if(supabaseClient){ await supabaseClient.from('investments').update({status:'approved',approved_at:new Date().toISOString(),total_earned:0}).eq('id',id); }
-  else{ let invs=LS.get('channel_investments',[]); let inv=invs.find(i=>i.id===id); if(inv){ inv.status='approved'; inv.approved_at=new Date().toISOString(); } LS.set('channel_investments',invs); }
+  else{ let invs=LS.get('Chanel_investments',[]); let inv=invs.find(i=>i.id===id); if(inv){ inv.status='approved'; inv.approved_at=new Date().toISOString(); } LS.set('Chanel_investments',invs); }
   toast('Approved - now visible in user Account'); loadInv();
 }
 async function rejectInv(id){
   const m=prompt('Message to user','Payment not received, please verify and re-upload');
   if(m===null) return;
   if(supabaseClient){ await supabaseClient.from('investments').update({status:'rejected',admin_message:m}).eq('id',id); }
-  else{ let invs=LS.get('channel_investments',[]); let inv=invs.find(i=>i.id===id); if(inv){ inv.status='rejected'; inv.admin_message=m; } LS.set('channel_investments',invs); }
+  else{ let invs=LS.get('Chanel_investments',[]); let inv=invs.find(i=>i.id===id); if(inv){ inv.status='rejected'; inv.admin_message=m; } LS.set('Chanel_investments',invs); }
   toast('Rejected with message'); loadInv();
 }
 async function loadWith(){
   let data=[];
   if(supabaseClient){ const {data:d}=await supabaseClient.from('withdrawals').select('*,profiles(username,email)').order('created_at',{ascending:false}); data=d||[]; }
-  else{ data=LS.get('channel_withdrawals',[]).reverse(); }
+  else{ data=LS.get('Chanel_withdrawals',[]).reverse(); }
   const el=document.getElementById('withList');
   if(!data.length){ el.innerHTML='No withdrawals'; return; }
   el.innerHTML=data.map(w=>{
-    const localUser = LS.get('channel_users',[]).find(u=>u.id===w.user_id);
+    const localUser = LS.get('Chanel_users',[]).find(u=>u.id===w.user_id);
     const uname=w.profiles?.username || localUser?.username || 'User';
     const uemail=w.profiles?.email || localUser?.email || '';
     return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)"><span>${uname} (${uemail}) - ${w.amount} GHC to ${w.phone_number}, ${w.account_name||'—'} (${w.network}) <span class="badge">${w.status}</span></span>
@@ -180,7 +180,7 @@ async function loadWith(){
 }
 async function approveW(id){
   if(supabaseClient){ await supabaseClient.from('withdrawals').update({status:'approved'}).eq('id',id); }
-  else{ let ws=LS.get('channel_withdrawals',[]); let w=ws.find(x=>x.id===id); if(w) w.status='approved'; LS.set('channel_withdrawals',ws); }
+  else{ let ws=LS.get('Chanel_withdrawals',[]); let w=ws.find(x=>x.id===id); if(w) w.status='approved'; LS.set('Chanel_withdrawals',ws); }
   toast('Withdrawal approved'); loadWith();
 }
 async function rejectW(id){
@@ -189,15 +189,15 @@ async function rejectW(id){
     if(w){ const {data:p}=await supabaseClient.from('profiles').select('balance').eq('id',w.user_id).single(); await supabaseClient.from('profiles').update({balance:(p.balance||0)+w.amount}).eq('id',w.user_id); }
     await supabaseClient.from('withdrawals').update({status:'rejected'}).eq('id',id);
   }else{
-    let ws=LS.get('channel_withdrawals',[]); let w=ws.find(x=>x.id===id);
-    if(w){ let users=LS.get('channel_users',[]); let u=users.find(x=>x.id===w.user_id); if(u) u.balance+=w.amount; w.status='rejected'; LS.set('channel_users',users); LS.set('channel_withdrawals',ws); }
+    let ws=LS.get('Chanel_withdrawals',[]); let w=ws.find(x=>x.id===id);
+    if(w){ let users=LS.get('Chanel_users',[]); let u=users.find(x=>x.id===w.user_id); if(u) u.balance+=w.amount; w.status='rejected'; LS.set('Chanel_users',users); LS.set('Chanel_withdrawals',ws); }
   }
   toast('Rejected & refunded'); loadWith();
 }
 async function loadUsers(){
   let users=[];
   if(supabaseClient){ const {data}=await supabaseClient.from('profiles').select('*').order('created_at',{ascending:false}).limit(50); users=data||[]; }
-  else{ users=LS.get('channel_users',[]); }
+  else{ users=LS.get('Chanel_users',[]); }
   document.getElementById('userList').innerHTML=users.map(u=>`<div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between"><span>${u.username} - ${u.email} - Bal: ${u.balance} - Inv: ${u.invite_count||0}/5 - ${u.invite_code}</span><span class="muted">${u.is_admin?'ADMIN':''}</span></div>`).join('');
 }
 document.getElementById('searchUser')?.addEventListener('input', loadInv);

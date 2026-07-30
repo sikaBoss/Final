@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Account - Channel</title>
+<title>Account - Chanel</title>
 <link rel="stylesheet" href="css/style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
 <style>.lock-screen{display:flex;min-height:80vh;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:20px}</style>
@@ -82,7 +82,7 @@ async function init(){
     document.getElementById('tokenBig').textContent=code;
     document.getElementById('inviteInfo').textContent=`Invites: ${currentUser.invite_count||0}/5 • Earned: ${(currentUser.invite_count||0)*15} GHC`;
     document.getElementById('accBal').textContent=(currentUser.balance||0).toFixed(2)+' GHC';
-    const shareText=encodeURIComponent(`Join me on Channel! Use my invite code ${code} to register. Link: ${location.origin}/register.html?ref=${code}`);
+    const shareText=encodeURIComponent(`Join me on Chanel! Use my invite code ${code} to register. Link: ${location.origin}/register.html?ref=${code}`);
     document.getElementById('waShare').href=`https://wa.me/?text=${shareText}`;
     const loginLink=document.getElementById('loginLink');
     if(loginLink){ loginLink.textContent='Logout'; loginLink.href='#'; loginLink.onclick=async(e)=>{e.preventDefault(); await Store.logout(); location.href='login.html';} }
@@ -106,7 +106,7 @@ async function loadInv(){
 async function loadWith(){
   let data;
   if(supabaseClient){ const {data:d}=await supabaseClient.from('withdrawals').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}); data=d||[]; }
-  else{ data=JSON.parse(localStorage.getItem('channel_withdrawals')||'[]').filter(w=>w.user_id===currentUser.id).reverse(); }
+  else{ data=JSON.parse(localStorage.getItem('Chanel_withdrawals')||'[]').filter(w=>w.user_id===currentUser.id).reverse(); }
   const el=document.getElementById('withList');
   if(!data.length){ el.innerHTML='<p class=muted>No withdrawals</p>'; return; }
   el.innerHTML=data.map(w=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span>${w.amount} GHC • ${w.phone_number} (${w.account_name||''}, ${w.network})</span><span class="badge">${w.status}</span></div>`).join('');
@@ -114,8 +114,8 @@ async function loadWith(){
 document.getElementById('copyBtn')?.addEventListener('click',()=>{ navigator.clipboard.writeText(document.getElementById('myToken').value); if(window.toast) toast('Token copied!'); });
 document.getElementById('shareBtn')?.addEventListener('click', async()=>{
   const code=document.getElementById('myToken').value;
-  const text=`Join Channel! My invite code: ${code}. Register at ${location.origin}/register.html?ref=${code}`;
-  if(navigator.share){ try{ await navigator.share({title:'Channel Invite', text}); }catch{} } else { navigator.clipboard.writeText(text); if(window.toast) toast('Invite text copied'); }
+  const text=`Join Chanel! My invite code: ${code}. Register at ${location.origin}/register.html?ref=${code}`;
+  if(navigator.share){ try{ await navigator.share({title:'Chanel Invite', text}); }catch{} } else { navigator.clipboard.writeText(text); if(window.toast) toast('Invite text copied'); }
 });
 document.getElementById('wBtn')?.addEventListener('click', async()=>{
   const amount=parseFloat(document.getElementById('wAmount').value);
@@ -134,10 +134,10 @@ document.getElementById('wBtn')?.addEventListener('click', async()=>{
       if(error) throw error;
       await supabaseClient.from('profiles').update({balance:currentUser.balance-amount}).eq('id',currentUser.id);
     }else{
-      let withdrawals=JSON.parse(localStorage.getItem('channel_withdrawals')||'[]');
+      let withdrawals=JSON.parse(localStorage.getItem('Chanel_withdrawals')||'[]');
       withdrawals.push({id:'w'+Date.now(),user_id:currentUser.id,amount,phone_number:phone,account_name:accountName,network,status:'pending',created_at:new Date().toISOString()});
-      localStorage.setItem('channel_withdrawals',JSON.stringify(withdrawals));
-      let users=JSON.parse(localStorage.getItem('channel_users')||'[]'); let me=users.find(u=>u.id===currentUser.id); me.balance-=amount; localStorage.setItem('channel_users',JSON.stringify(users)); localStorage.setItem('channel_session',JSON.stringify(me));
+      localStorage.setItem('Chanel_withdrawals',JSON.stringify(withdrawals));
+      let users=JSON.parse(localStorage.getItem('Chanel_users')||'[]'); let me=users.find(u=>u.id===currentUser.id); me.balance-=amount; localStorage.setItem('Chanel_users',JSON.stringify(users)); localStorage.setItem('Chanel_session',JSON.stringify(me));
     }
     if(window.toast) toast('Withdrawal requested'); setTimeout(()=>location.reload(),800);
   }catch(e){ msg.textContent=e.message; }
