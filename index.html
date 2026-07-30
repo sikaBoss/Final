@@ -23,7 +23,7 @@
     <p class="muted" style="text-align:left;line-height:1.6">
       Stay connected with Chanel! Join our official Telegram group for the latest product drops, promotions, payout announcements, and direct support from our team.
     </p>
-    <a href="https://t.me/+taevlrAFZ1o3YTRk" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:10px;background:var(--pink-deep);color:#fff;text-decoration:none;font-weight:700;padding:14px;border-radius:12px;margin-top:22px">
+    <a id="telegramJoinLink" href="https://t.me/+taevlrAFZ1o3YTRk" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:10px;background:var(--pink-deep);color:#fff;text-decoration:none;font-weight:700;padding:14px;border-radius:12px;margin-top:22px">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.568 8.16-1.98 9.34c-.15.67-.54.83-1.09.52l-3-2.21-1.45 1.4c-.16.16-.29.29-.6.29l.21-3.05L17.14 9c.29-.26-.06-.4-.45-.14L9.5 13.6l-2.98-.93c-.65-.2-.66-.65.14-.96l11.66-4.5c.54-.2 1.01.13.83.99z"/></svg>
       Telegram Group
     </a>
@@ -32,11 +32,14 @@
 </div>
 <script>
 (function showTelegramModal(){
-  if(localStorage.getItem('Chanel_telegram_seen')) return;
+  if(localStorage.getItem('Chanel_telegram_joined')) return;
   document.getElementById('telegramOverlay').style.display='flex';
 })();
+document.getElementById('telegramJoinLink').addEventListener('click', ()=>{
+  localStorage.setItem('Chanel_telegram_joined','1');
+  document.getElementById('telegramOverlay').style.display='none';
+});
 document.getElementById('telegramOkBtn').addEventListener('click', ()=>{
-  localStorage.setItem('Chanel_telegram_seen','1');
   document.getElementById('telegramOverlay').style.display='none';
 });
 </script>
