@@ -198,7 +198,7 @@ async function loadUsers(){
   let users=[];
   if(supabaseClient){ const {data}=await supabaseClient.from('profiles').select('*').order('created_at',{ascending:false}).limit(50); users=data||[]; }
   else{ users=LS.get('channel_users',[]); }
-  document.getElementById('userList').innerHTML=users.map(u=>`<div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between"><span>${u.username} - ${u.email} - Bal: ${u.balance} - Inv: ${u.invite_count||0}/3 - ${u.invite_code}</span><span class="muted">${u.is_admin?'ADMIN':''}</span></div>`).join('');
+  document.getElementById('userList').innerHTML=users.map(u=>`<div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between"><span>${u.username} - ${u.email} - Bal: ${u.balance} - Inv: ${u.invite_count||0}/5 - ${u.invite_code}</span><span class="muted">${u.is_admin?'ADMIN':''}</span></div>`).join('');
 }
 document.getElementById('searchUser')?.addEventListener('input', loadInv);
 document.getElementById('addBtn').addEventListener('click', async()=>{
