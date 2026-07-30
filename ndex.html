@@ -31,8 +31,12 @@
   </div>
 </div>
 <script>
-document.getElementById('telegramOverlay').style.display='flex';
+(function showTelegramModal(){
+  if(localStorage.getItem('Chanel_telegram_seen')) return;
+  document.getElementById('telegramOverlay').style.display='flex';
+})();
 document.getElementById('telegramOkBtn').addEventListener('click', ()=>{
+  localStorage.setItem('Chanel_telegram_seen','1');
   document.getElementById('telegramOverlay').style.display='none';
 });
 </script>
