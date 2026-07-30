@@ -41,7 +41,7 @@ async function load(){
   if(!products.length){ g.innerHTML='<p class=muted>No products</p>'; return; }
   g.innerHTML=products.map(p=>`
     <div class="card"><img class="product-img" src="${p.image_url}"><h3 style="margin-top:10px">${p.title}</h3><div class="muted">${p.name||''} • ${p.days||120} days</div>
-    <div class="divider"></div><div style="display:flex;justify-content:space-between"><span><b>GHC ${p.price}</b></span><span class="badge">+GHC ${p.income_per_day} per day = GHC ${p.total_income||((p.income_per_day*120)/1.5)} total</span></div>
+    <div class="divider"></div><div style="display:flex;justify-content:space-between"><span><b>GHC ${p.price}</b></span><span class="badge">+GHC ${p.income_per_day} per day = GHC ${p.total_income||((p.income_per_day*120)/1.5).toFixed(2)} total</span></div>
     <button class="btn btn-pink" style="width:100%;margin-top:12px" onclick='openModal(${JSON.stringify(p).replace(/'/g,"&apos;")})'>Buy Now</button></div>`).join('');
 }
 document.getElementById('buyBtn').addEventListener('click', async()=>{
