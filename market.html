@@ -41,7 +41,21 @@ async function load(){
   if(!products.length){ g.innerHTML='<p class=muted>No products</p>'; return; }
   g.innerHTML=products.map(p=>`
     <div class="card"><img class="product-img" src="${p.image_url}"><h3 style="margin-top:10px">${p.title}</h3><div class="muted">${p.name||''} • ${p.days||120} days</div>
-    <div class="divider"></div><div style="display:flex;justify-content:space-between"><span><b>GHC ${p.price}</b></span><span class="badge">+${p.income_per_day} per day = GHC ${p.total_income||(p.income_per_day*120)/1.5} total</span></div>
+    <div class="divider"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div style="background:var(--pink-light);border-radius:12px;padding:8px 10px;text-align:center">
+        <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.3px">Price</div>
+        <div style="font-weight:800;color:var(--pink-deep)">GHC ${p.price}</div>
+      </div>
+      <div style="background:var(--pink-light);border-radius:12px;padding:8px 10px;text-align:center">
+        <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.3px">Income / day</div>
+        <div style="font-weight:800;color:#1a9c53">GHC ${p.income_per_day}</div>
+      </div>
+      <div style="grid-column:1 / -1;background:var(--pink-light);border-radius:12px;padding:8px 10px;text-align:center">
+        <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.3px">Income for ${p.days||120} days</div>
+        <div style="font-weight:800">GHC ${p.total_income||p.income_per_day*(p.days||120)}</div>
+      </div>
+    </div>
     <button class="btn btn-pink" style="width:100%;margin-top:12px" onclick='openModal(${JSON.stringify(p).replace(/'/g,"&apos;")})'>Buy Now</button></div>`).join('');
 }
 document.getElementById('buyBtn').addEventListener('click', async()=>{

@@ -20,7 +20,7 @@ const Store = {
       income_per_day: Number(p.income_per_day) || 5,
       days: Number(p.days) || 120,
       steps: p.steps || '',
-      total_income: (Number(p.income_per_day) || 5) * (Number(p.days) || 120),
+      total_income: (Number(p.income_per_day) || 5) * ((Number(p.days)/1.5) || 120),
       image_url: p.image_url || ''
     };
 
