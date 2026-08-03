@@ -60,7 +60,7 @@
     </div>
   </div>
   <div>
-    <div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><h3>Investments</h3><span class="badge">30% per day • 120 days</span></div><div class="divider"></div><div id="invList"></div></div>
+    <div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><h3>Investments</h3><span class="badge">+5 GHC / day • 120 days</span></div><div class="divider"></div><div id="invList"></div></div>
     <div class="card" style="margin-top:16px"><h3>Withdrawals</h3><div class="divider"></div><div id="withList"></div></div>
   </div>
 </div>
@@ -130,6 +130,14 @@ document.getElementById('wBtn')?.addEventListener('click', async()=>{
   if(accountAgeMs < 24*60*60*1000){
     const hoursLeft = Math.ceil((24*60*60*1000 - accountAgeMs) / (60*60*1000));
     msg.textContent=`New accounts must wait 24 hours before withdrawing. Try again in ${hoursLeft}h.`;
+    return;
+  }
+  // Ghana (GHC) is UTC+0 year-round (no DST), so UTC day/hour == Ghana local time.
+  const nowGh = new Date();
+  const ghDay = nowGh.getUTCDay();  // 0=Sun ... 6=Sat
+  const ghHour = nowGh.getUTCHours();
+  if(ghDay===0 || ghDay===6 || ghHour<6 || ghHour>=18){
+    msg.textContent='Withdrawals are only available Monday to Friday, 6am–6pm.';
     return;
   }
   if(amount>currentUser.balance){ msg.textContent='Insufficient balance'; return; }
