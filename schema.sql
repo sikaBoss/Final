@@ -71,6 +71,7 @@ create table withdrawals (
   account_name  text not null, -- name registered to the mobile money number
   network       text not null check (network in ('MTN','Vodafone','AirtelTigo')),
   status        text not null default 'pending' check (status in ('pending','approved','rejected')),
+  admin_message text,
   created_at    timestamptz not null default now()
 );
 
@@ -219,7 +220,14 @@ create policy "withdrawals_select_own_or_admin"
 create policy "withdrawals_insert_own"
   on withdrawals for insert
   to authenticated
-  with check (user_id = auth.uid());
+  with check (
+    user_id = auth.uid()
+    and exists (
+      select 1 from profiles
+      where id = auth.uid()
+        and created_at <= now() - interval '24 hours'
+    )
+  );
 
 -- Only admins approve/reject withdrawal requests.
 create policy "withdrawals_update_admin"
@@ -448,7 +456,7 @@ begin
   end if;
 
   update profiles
-    set invite_count = invite_count + 1, balance = balance + 15
+    set invite_count = invite_count + 1, balance = balance + 10
     where id = inviter.id;
 
   update profiles set invited_by = inviter.id where id = p_new_user_id;

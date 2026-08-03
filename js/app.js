@@ -1,6 +1,6 @@
 
-// Chanel - Core Logic (works with Supabase or Local)
-const INVITE_BONUS_AMOUNT = 15; // flat GHC bonus paid to the referrer when a friend registers with their code
+// Channel - Core Logic (works with Supabase or Local)
+const INVITE_BONUS_AMOUNT = 10; // flat GHC bonus paid to the referrer when a friend registers with their code
 
 const Store = {
   // PRODUCTS
@@ -9,7 +9,7 @@ const Store = {
       const {data,error}=await supabaseClient.from('products').select('*').order('created_at',{ascending:false});
       if(error) throw error; return data;
     }else{
-      return LS.get('Chanel_products', []);
+      return LS.get('channel_products', []);
     }
   },
   async addProduct(p){
@@ -20,7 +20,7 @@ const Store = {
       income_per_day: Number(p.income_per_day) || 5,
       days: Number(p.days) || 120,
       steps: p.steps || '',
-      total_income: (Number(p.income_per_day) || 5) * ((Number(p.days)/1.5) || 120),
+      total_income: (Number(p.income_per_day) || 5) * (Number(p.days) || 120),
       image_url: p.image_url || ''
     };
 
@@ -34,15 +34,15 @@ const Store = {
         const {data:urlData} = supabaseClient.storage.from('products').getPublicUrl(name);
         payload.image_url = urlData.publicUrl;
       }
-      if(!payload.image_url) payload.image_url = 'https://via.placeholder.com/600x400?text=Chanel+Product';
+      if(!payload.image_url) payload.image_url = 'https://via.placeholder.com/600x400?text=Channel+Product';
       const {data,error} = await supabaseClient.from('products').insert(payload).select().single();
       if(error) throw new Error('Product could not be saved: ' + error.message);
       return data;
     }
 
-    const list = LS.get('Chanel_products', []);
-    list.unshift({id:'p'+Date.now(), ...payload, image_url:payload.image_url || 'https://via.placeholder.com/600x400?text=Chanel+Product', created_at:new Date().toISOString()});
-    LS.set('Chanel_products', list);
+    const list = LS.get('channel_products', []);
+    list.unshift({id:'p'+Date.now(), ...payload, image_url:payload.image_url || 'https://via.placeholder.com/600x400?text=Channel+Product', created_at:new Date().toISOString()});
+    LS.set('channel_products', list);
     return list[0];
   },
 
@@ -67,18 +67,18 @@ const Store = {
         const {data:urlData} = supabaseClient.storage.from('products').getPublicUrl(name);
         payload.image_url = urlData.publicUrl;
       }
-      if(!payload.image_url) payload.image_url = 'https://via.placeholder.com/600x400?text=Chanel+Product';
+      if(!payload.image_url) payload.image_url = 'https://via.placeholder.com/600x400?text=Channel+Product';
       const {data,error} = await supabaseClient.from('products').update(payload).eq('id',id).select().single();
       if(error) throw new Error('Product could not be updated: ' + error.message);
       return data;
     }
 
-    const list = LS.get('Chanel_products', []);
+    const list = LS.get('channel_products', []);
     const idx = list.findIndex(x=>x.id===id);
     if(idx===-1) throw new Error('Product not found');
-    if(!payload.image_url) payload.image_url = list[idx].image_url || 'https://via.placeholder.com/600x400?text=Chanel+Product';
+    if(!payload.image_url) payload.image_url = list[idx].image_url || 'https://via.placeholder.com/600x400?text=Channel+Product';
     list[idx] = {...list[idx], ...payload};
-    LS.set('Chanel_products', list);
+    LS.set('channel_products', list);
     return list[idx];
   },
 
@@ -88,8 +88,8 @@ const Store = {
       if(error) throw new Error('Product could not be deleted: ' + error.message);
       return;
     }
-    const list = LS.get('Chanel_products', []).filter(x=>x.id!==id);
-    LS.set('Chanel_products', list);
+    const list = LS.get('channel_products', []).filter(x=>x.id!==id);
+    LS.set('channel_products', list);
   },
 
   // AUTH / PROFILES
@@ -143,7 +143,7 @@ const Store = {
         myCode = genCode();
         const result = await supabaseClient.from('profiles').insert({
           id:uid, username:cleanUsername, email:cleanEmail, invite_code:myCode, invited_by:invitedBy,
-          invite_count:0, balance:0, is_admin: cleanEmail==='admin@Chanel.com'
+          invite_count:0, balance:0, is_admin: cleanEmail==='admin@channel.com'
         });
         ins = result.error;
         if(!ins) break; // inserted fine
@@ -174,7 +174,7 @@ const Store = {
 
       return {code:myCode, session:data.session, user:data.user};
     }else{
-      let users=LS.get('Chanel_users',[]);
+      let users=LS.get('channel_users',[]);
       if(users.find(u=>u.username.toLowerCase()===cleanUsername.toLowerCase())) throw new Error('An account with that username already exists. Please log in instead.');
       if(users.find(u=>u.email.toLowerCase()===cleanEmail)) throw new Error('An account with that email already exists. Please log in instead.');
 
@@ -186,11 +186,11 @@ const Store = {
         invitedBy=inviter.id;
       }
 
-      const newUser={id:'u'+Date.now(),username:cleanUsername,email:cleanEmail,password,invite_code:myCode,invited_by:invitedBy,invite_count:0,balance:0,created_at:new Date().toISOString(),is_admin: cleanEmail==='admin@Chanel.com'};
+      const newUser={id:'u'+Date.now(),username:cleanUsername,email:cleanEmail,password,invite_code:myCode,invited_by:invitedBy,invite_count:0,balance:0,created_at:new Date().toISOString(),is_admin: cleanEmail==='admin@channel.com'};
       users.push(newUser);
       if(inviter){ inviter.invite_count=(inviter.invite_count||0)+1; inviter.balance=(inviter.balance||0)+INVITE_BONUS_AMOUNT; }
-      LS.set('Chanel_users',users);
-      LS.set('Chanel_session',newUser);
+      LS.set('channel_users',users);
+      LS.set('channel_session',newUser);
       return {code:myCode, session:true, user:newUser};
     }
   },
@@ -202,10 +202,10 @@ const Store = {
       if(error) throw error;
       return data.user;
     }else{
-      const users=LS.get('Chanel_users',[]);
+      const users=LS.get('channel_users',[]);
       const u=users.find(x=>x.email===email && x.password===password);
       if(!u) throw new Error('Invalid email or password');
-      LS.set('Chanel_session', u);
+      LS.set('channel_session', u);
       return u;
     }
   },
@@ -217,13 +217,13 @@ const Store = {
       const {data:prof}=await supabaseClient.from('profiles').select('*').eq('id',user.id).single();
       return prof;
     }else{
-      return LS.get('Chanel_session', null);
+      return LS.get('channel_session', null);
     }
   },
 
   async logout(){
     if(supabaseClient){ await supabaseClient.auth.signOut(); }
-    else{ localStorage.removeItem('Chanel_session'); }
+    else{ localStorage.removeItem('channel_session'); }
   },
 
   // PASSWORD RESET — verified by email + current account balance
@@ -242,7 +242,7 @@ const Store = {
       return {verified:true, email:cleanEmail};
     }
 
-    const users = LS.get('Chanel_users', []);
+    const users = LS.get('channel_users', []);
     const user = users.find(u => String(u.email||'').toLowerCase() === cleanEmail);
     if(!user) throw new Error('We could not find an account with that email address.');
     if(Number(user.balance||0).toFixed(2) !== cleanBalance.toFixed(2)) throw new Error('The email and account balance do not match our records. Please check your details and try again.');
@@ -261,12 +261,12 @@ const Store = {
       return {success:true};
     }
 
-    const users = LS.get('Chanel_users', []);
+    const users = LS.get('channel_users', []);
     const user = users.find(u => String(u.email||'').toLowerCase() === cleanEmail);
     if(!user) throw new Error('We could not find an account with that email address.');
     if(Number(user.balance||0).toFixed(2) !== cleanBalance.toFixed(2)) throw new Error('The email and account balance do not match our records. Please check your details and try again.');
     user.password = newPassword;
-    LS.set('Chanel_users', users);
+    LS.set('channel_users', users);
     return {success:true};
   },
 
@@ -290,7 +290,7 @@ const Store = {
       const {error}=await supabaseClient.from('investments').insert({user_id:userId,product_id:product.id,product_title:product.title,product_price:product.price,buyer_email:email,payment_screenshot_url:screenshotUrl,status:'pending',daily_earning:product.income_per_day});
       if(error) throw error;
     }else{
-      const users=LS.get('Chanel_users',[]);
+      const users=LS.get('channel_users',[]);
       const u=users.find(x=>x.username===username);
       if(!u) throw new Error('Username not found');
       if(email && u.email && email.toLowerCase()!==u.email.toLowerCase()){
@@ -298,9 +298,9 @@ const Store = {
       }
       userId=u.id;
       screenshotUrl = screenshotFile ? URL.createObjectURL(screenshotFile) : product.image_url;
-      const invs=LS.get('Chanel_investments',[]);
+      const invs=LS.get('channel_investments',[]);
       invs.push({id:'inv'+Date.now(),user_id:userId,product_id:product.id,product_title:product.title,product_price:product.price,buyer_email:email,payment_screenshot_url:screenshotUrl,status:'pending',daily_earning:product.income_per_day,total_earned:0,days_elapsed:0,created_at:new Date().toISOString(),approved_at:null});
-      LS.set('Chanel_investments',invs);
+      LS.set('channel_investments',invs);
     }
   },
 
@@ -309,7 +309,7 @@ const Store = {
       const {data}=await supabaseClient.from('investments').select('*').eq('user_id',userId).order('created_at',{ascending:false});
       return data||[];
     }else{
-      return LS.get('Chanel_investments',[]).filter(i=>i.user_id===userId).reverse();
+      return LS.get('channel_investments',[]).filter(i=>i.user_id===userId).reverse();
     }
   },
 
@@ -333,7 +333,7 @@ const Store = {
       }
     }
     if(!supabaseClient && gain>0){
-      LS.set('Chanel_investments', LS.get('Chanel_investments',[]).map(i=>{
+      LS.set('channel_investments', LS.get('channel_investments',[]).map(i=>{
         const updated=investments.find(u=>u.id===i.id);
         return updated?updated:i;
       }));
@@ -342,9 +342,9 @@ const Store = {
       if(supabaseClient){
         await supabaseClient.from('profiles').update({balance:(user.balance||0)+gain}).eq('id',user.id);
       }else{
-        let users=LS.get('Chanel_users',[]);
+        let users=LS.get('channel_users',[]);
         let me=users.find(u=>u.id===user.id);
-        if(me){ me.balance=(me.balance||0)+gain; LS.set('Chanel_users',users); LS.set('Chanel_session',me); }
+        if(me){ me.balance=(me.balance||0)+gain; LS.set('channel_users',users); LS.set('channel_session',me); }
       }
       return gain;
     }
