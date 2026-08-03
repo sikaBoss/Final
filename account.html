@@ -126,12 +126,6 @@ document.getElementById('wBtn')?.addEventListener('click', async()=>{
   if(!amount||amount<50){ msg.textContent='Min 50 GHC'; return; }
   if(!phone){ msg.textContent='Enter phone number'; return; }
   if(!accountName){ msg.textContent='Enter the account name registered to that number'; return; }
-  const accountAgeMs = Date.now() - new Date(currentUser.created_at).getTime();
-  if(accountAgeMs < 24*60*60*1000){
-    const hoursLeft = Math.ceil((24*60*60*1000 - accountAgeMs) / (60*60*1000));
-    msg.textContent=`New accounts must wait 24 hours before withdrawing. Try again in ${hoursLeft}h.`;
-    return;
-  }
   // Ghana (GHC) is UTC+0 year-round (no DST), so UTC day/hour == Ghana local time.
   const nowGh = new Date();
   const ghDay = nowGh.getUTCDay();  // 0=Sun ... 6=Sat

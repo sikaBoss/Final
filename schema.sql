@@ -222,11 +222,6 @@ create policy "withdrawals_insert_own"
   to authenticated
   with check (
     user_id = auth.uid()
-    and exists (
-      select 1 from profiles
-      where id = auth.uid()
-        and created_at <= now() - interval '24 hours'
-    )
     -- Ghana (GHC) is UTC+0 year-round (no DST), so UTC day/hour == Ghana local time.
     and extract(dow from (now() at time zone 'UTC')) between 1 and 5
     and extract(hour from (now() at time zone 'UTC')) >= 6
